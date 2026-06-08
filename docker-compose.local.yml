@@ -1,0 +1,28 @@
+services:
+  bgutil-provider:
+    image: brainicism/bgutil-ytdlp-pot-provider
+    container_name: bgutil-provider
+    init: true
+    ports:
+      - "4416:4416"
+    environment:
+      - TOKEN_TTL=6
+    restart: unless-stopped
+
+  savetube:
+    build: .
+    container_name: savetube
+    depends_on:
+      - bgutil-provider
+    env_file:
+      - .env
+    environment:
+      - POT_PROVIDER_URL=http://bgutil-provider:4416
+    volumes:
+      - downloads:/tmp/downloads
+    ports:
+      - "${API_PORT:-6060}:${API_PORT:-6060}"
+    restart: unless-stopped
+
+volumes:
+  downloads:

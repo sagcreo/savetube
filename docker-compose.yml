@@ -1,0 +1,35 @@
+services:
+  bgutil-provider:
+    image: brainicism/bgutil-ytdlp-pot-provider
+    container_name: bgutil-provider
+    init: true
+    environment:
+      - TOKEN_TTL=6
+    restart: unless-stopped
+    networks:
+      - web
+
+  savetube:
+    build: .
+    container_name: savetube
+    depends_on:
+      - bgutil-provider
+    env_file:
+      - stack.env
+    environment:
+      - POT_PROVIDER_URL=http://bgutil-provider:4416
+    volumes:
+      - downloads:/tmp/downloads
+    expose:
+      - "6060"
+    restart: unless-stopped
+    networks:
+      - web
+
+volumes:
+  downloads:
+
+networks:
+  web:
+    external: true
+    name: portainer-caddy_web

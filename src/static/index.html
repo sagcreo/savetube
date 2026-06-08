@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaveTube</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2306b6d4'/><path d='M30 25 L30 75 L75 50 Z' fill='white'/></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #121212;
+            --bg-card: #1c1c1c;
+            --bg-input: #232323;
+            --border: #2e2e2e;
+            --brand: #06b6d4;
+            --brand-hover: #0891b2;
+            --text-main: #ededed;
+            --text-muted: #878787;
+        }
+        body { background: var(--bg-body); color: var(--text-main); font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .sb-card { background: var(--bg-card); border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        .sb-input { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); transition: all 0.2s; }
+        .sb-input:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 2px rgba(6,182,212,0.2); }
+        .sb-btn { background: var(--brand); color: #fff; font-weight: 600; transition: all 0.2s; }
+        .sb-btn:hover:not(:disabled) { background: var(--brand-hover); transform: translateY(-1px); }
+        .sb-btn:disabled { background: #383838; color: #666; cursor: not-allowed; transform: none; }
+        .quality-btn { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); transition: all 0.2s; cursor: pointer; }
+        .quality-btn:hover { border-color: var(--brand); background: #282828; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse-border { 0%, 100% { border-color: var(--brand); } 50% { border-color: transparent; } }
+        .progress-ring { border: 3px solid var(--border); border-top-color: var(--brand); animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .progress-bar-bg { background: var(--bg-input); border: 1px solid var(--border); border-radius: 9999px; overflow: hidden; height: 8px; }
+        .progress-bar-fill { background: linear-gradient(90deg, var(--brand), #22d3ee); height: 100%; border-radius: 9999px; transition: width 0.3s ease; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl sb-card rounded-xl p-8 relative">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-[#2e2e2e]">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-[#06b6d4] flex items-center justify-center text-white">
+                    <i class="fas fa-download text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white">SaveTube</h1>
+                    <p class="text-xs text-[#878787]">Video Downloader</p>
+                </div>
+            </div>
+            <span class="px-2 py-1 bg-[#232323] text-[#06b6d4] rounded text-xs border border-[#2e2e2e]">YouTube &middot; TikTok</span>
+        </div>
+
+        <!-- 1. URL Input -->
+        <div id="urlSection" class="space-y-4">
+            <div>
+                <label class="block text-sm text-[#878787] mb-2">Ссылка на видео</label>
+                <input type="text" id="urlInput"
+                       placeholder="https://youtube.com/watch?v=... или tiktok.com/..."
+                       class="w-full sb-input rounded-lg p-3 text-sm"
+                       autocomplete="off" spellcheck="false">
+                <p class="text-[10px] text-[#555] mt-1.5 pl-1"><i class="fas fa-info-circle mr-1"></i>YouTube, YouTube Shorts, TikTok</p>
+            </div>
+            <button id="infoBtn" disabled class="w-full sb-btn py-3 rounded-lg flex items-center justify-center gap-2">
+                <i class="fas fa-search"></i> Получить инфо
+            </button>
+        </div>
+
+        <!-- 2. Loading (metadata fetch) -->
+        <div id="loadingSection" class="hidden py-10 text-center fade-in">
+            <div class="progress-ring rounded-full h-12 w-12 mx-auto"></div>
+            <p class="text-[#878787] mt-4 text-sm">Получаю информацию о видео...</p>
+        </div>
+
+        <!-- 3. Video Card (stays visible once loaded) -->
+        <div id="videoCard" class="hidden fade-in mb-4">
+            <div class="flex gap-4 bg-[#232323] p-4 rounded-lg border border-[#2e2e2e]">
+                <img id="videoThumb" class="w-36 h-20 object-cover rounded flex-shrink-0" src="" alt=""
+                     onerror="this.style.display='none'">
+                <div class="flex-1 min-w-0">
+                    <h3 id="videoTitle" class="font-medium text-white text-sm leading-snug line-clamp-2"></h3>
+                    <p id="videoDuration" class="text-xs text-[#878787] mt-1.5"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Quality Selection -->
+        <div id="qualitySection" class="hidden fade-in">
+            <label class="block text-sm text-[#878787] mb-3">Выберите качество</label>
+            <div id="qualityGrid" class="grid grid-cols-3 gap-2"></div>
+            <button onclick="resetApp()" class="text-[#555] hover:text-[#878787] text-xs mt-4 transition-colors">
+                <i class="fas fa-arrow-left mr-1"></i> Другая ссылка
+            </button>
+        </div>
+
+        <!-- 5. Download Progress -->
+        <div id="progressSection" class="hidden fade-in py-6 space-y-4">
+            <div class="flex items-center gap-3 mb-1">
+                <div class="progress-ring rounded-full h-6 w-6 flex-shrink-0"></div>
+                <p id="progressText" class="text-white text-sm font-medium">Скачиваю...</p>
+            </div>
+            <div class="progress-bar-bg">
+                <div id="progressBar" class="progress-bar-fill" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between items-center">
+                <p id="progressPercent" class="text-xs text-[#06b6d4] font-mono">0%</p>
+                <p class="text-[10px] text-[#555]">Не закрывайте страницу</p>
+            </div>
+        </div>
+
+        <!-- 6. Result -->
+        <div id="resultSection" class="hidden fade-in py-6 text-center space-y-4">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <i class="fas fa-check-circle text-2xl text-[#06b6d4]"></i>
+                <h2 class="text-xl font-bold text-white">Готово</h2>
+            </div>
+            <p id="resultInfo" class="text-[#878787] text-sm"></p>
+            <div class="flex gap-3 justify-center">
+                <a id="downloadLink" class="sb-btn py-2.5 px-6 rounded-lg flex items-center gap-2 no-underline cursor-pointer">
+                    <i class="fas fa-download"></i> <span id="downloadBtnText">Скачать</span>
+                </a>
+                <button onclick="resetApp()" class="bg-[#2e2e2e] hover:bg-[#3e3e3e] text-white py-2.5 px-6 rounded-lg transition-colors">
+                    Новая ссылка
+                </button>
+            </div>
+        </div>
+
+        <!-- 7. Error -->
+        <div id="errorSection" class="hidden fade-in py-6">
+            <div class="bg-red-900/10 border border-red-900/50 rounded-lg p-6 text-center">
+                <i class="fas fa-circle-xmark text-red-500 text-2xl mb-3"></i>
+                <h3 class="text-base font-bold text-red-200 mb-2">Ошибка</h3>
+                <p id="errorMsg" class="text-red-400 text-sm mb-4"></p>
+                <button onclick="resetApp()" class="text-[#878787] underline hover:text-white text-sm transition-colors">
+                    Попробовать снова
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script>
+const urlInput = document.getElementById('urlInput');
+const infoBtn = document.getElementById('infoBtn');
+const urlPattern = /https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/|(?:vm\.)?tiktok\.com\/)\S+/i;
+
+let currentUrl = '';
+
+urlInput.addEventListener('input', () => {
+    infoBtn.disabled = !urlPattern.test(urlInput.value.trim());
+});
+
+urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !infoBtn.disabled) infoBtn.click();
+});
+
+infoBtn.addEventListener('click', fetchInfo);
+
+async function fetchInfo() {
+    const url = urlInput.value.trim();
+    currentUrl = url;
+    showState('loading');
+
+    try {
+        const res = await fetch('/api/info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        renderVideoInfo(data);
+    } catch (e) {
+        showError(e.message || 'Не удалось получить информацию');
+    }
+}
+
+function renderVideoInfo(data) {
+    document.getElementById('videoThumb').src = data.thumbnail;
+    document.getElementById('videoThumb').style.display = '';
+    document.getElementById('videoTitle').textContent = data.title;
+    document.getElementById('videoDuration').textContent = formatDuration(data.duration);
+
+    const grid = document.getElementById('qualityGrid');
+    grid.innerHTML = '';
+
+    for (const fmt of data.formats) {
+        const btn = document.createElement('button');
+        btn.className = 'quality-btn py-3 px-4 rounded-lg text-center';
+        btn.innerHTML = `<span class="font-semibold text-sm">${fmt.height}p</span><br><span class="text-[10px] text-[#878787]">${formatSize(fmt.filesize)}</span>`;
+        btn.onclick = () => startDownload(fmt.height);
+        grid.appendChild(btn);
+    }
+
+    showState('select');
+}
+
+async function startDownload(quality) {
+    showState('downloading');
+
+    try {
+        const res = await fetch('/api/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: currentUrl, quality }),
+        });
+
+        const contentType = res.headers.get('Content-Type') || '';
+
+        if (contentType.includes('text/event-stream')) {
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    const event = JSON.parse(line.slice(6));
+
+                    if (event.status === 'progress') {
+                        updateProgress(event.text);
+                    } else if (event.status === 'done') {
+                        showResult(event);
+                        return;
+                    } else if (event.status === 'error') {
+                        throw new Error(event.message);
+                    }
+                }
+            }
+            // Stream ended without done event
+            throw new Error('Соединение прервано');
+        } else {
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            if (data.status === 'done') {
+                showResult(data);
+                return;
+            }
+            throw new Error(data.error || 'Неизвестная ошибка');
+        }
+    } catch (e) {
+        showError(e.message || 'Не удалось скачать видео');
+    }
+}
+
+function showResult(data) {
+    const link = document.getElementById('downloadLink');
+    link.href = data.file_url;
+    link.download = data.filename;
+    document.getElementById('downloadBtnText').textContent = `Скачать (${formatSize(data.filesize)})`;
+    document.getElementById('resultInfo').textContent = data.filename;
+    showState('result');
+}
+
+function showError(msg) {
+    document.getElementById('errorMsg').textContent = msg;
+    showState('error');
+}
+
+const sections = ['urlSection', 'loadingSection', 'videoCard', 'qualitySection', 'progressSection', 'resultSection', 'errorSection'];
+
+const stateMap = {
+    input:       ['urlSection'],
+    loading:     ['loadingSection'],
+    select:      ['videoCard', 'qualitySection'],
+    downloading: ['videoCard', 'progressSection'],
+    result:      ['videoCard', 'resultSection'],
+    error:       ['errorSection'],
+};
+
+function showState(state) {
+    const visible = stateMap[state] || [];
+    for (const id of sections) {
+        const el = document.getElementById(id);
+        if (visible.includes(id)) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    }
+}
+
+function updateProgress(text) {
+    document.getElementById('progressText').textContent = text;
+    const match = text.match(/(\d+)%/);
+    if (match) {
+        const pct = parseInt(match[1]);
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressPercent').textContent = pct + '%';
+    } else if (text.includes('Объединяю')) {
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('progressPercent').textContent = 'Финализация...';
+    }
+}
+
+function resetApp() {
+    urlInput.value = '';
+    infoBtn.disabled = true;
+    currentUrl = '';
+    document.getElementById('progressText').textContent = 'Скачиваю...';
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('progressPercent').textContent = '0%';
+    showState('input');
+    urlInput.focus();
+}
+
+function formatDuration(s) {
+    if (!s) return '';
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    const h = Math.floor(m / 60);
+    if (h) return h + ':' + String(m % 60).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+    return m + ':' + String(sec).padStart(2, '0');
+}
+
+function formatSize(bytes) {
+    if (!bytes) return '? MB';
+    const mb = bytes / (1024 * 1024);
+    if (mb >= 1024) return '~' + (mb / 1024).toFixed(1) + ' GB';
+    return '~' + Math.round(mb) + ' MB';
+}
+
+urlInput.focus();
+</script>
+</body>
+</html>
