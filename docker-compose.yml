@@ -21,7 +21,7 @@ services:
       - COOKIES_FILE=/app/cookies/youtube.txt
     volumes:
       - downloads:/tmp/downloads
-      - ./cookies:/app/cookies
+      - /opt/savetube/cookies:/app/cookies
     ports:
       - "7249:6060"
     restart: unless-stopped
