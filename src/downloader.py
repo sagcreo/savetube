@@ -36,6 +36,9 @@ class Downloader:
             "socket_timeout": 20,
             "retry_sleep_functions": {"http": lambda n: 2 ** n},
             "extractor_args": {
+                "youtube": {
+                    "player_client": ["web", "mweb", "android"],
+                },
                 "youtubepot-bgutilhttp": {
                     "base_url": [self.settings.pot_provider_url],
                 },
