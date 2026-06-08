@@ -37,7 +37,7 @@ class Downloader:
             "retry_sleep_functions": {"http": lambda n: 2 ** n},
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["tv", "android_vr"],
+                    "player_client": ["web_embedded", "tv", "android_vr"],
                 },
                 "youtubepot-bgutilhttp": {
                     "base_url": [self.settings.pot_provider_url],
