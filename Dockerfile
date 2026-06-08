@@ -7,7 +7,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir --force-reinstall \
+    "yt-dlp[default] @ https://github.com/yt-dlp/yt-dlp/archive/refs/heads/master.zip"
 
 COPY src/ src/
 
