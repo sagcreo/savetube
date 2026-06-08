@@ -12,6 +12,7 @@ class Settings:
     api_port: int = 6060
     pot_provider_url: str = "http://bgutil-provider:4416"
     cookies_file: str | None = None
+    yt_proxy: str | None = None
 
     def __post_init__(self):
         self.download_dir = os.getenv("DOWNLOAD_DIR", self.download_dir)
@@ -22,6 +23,7 @@ class Settings:
         self.api_port = int(os.getenv("API_PORT", self.api_port))
         self.pot_provider_url = os.getenv("POT_PROVIDER_URL", self.pot_provider_url)
         self.cookies_file = os.getenv("COOKIES_FILE") or None
+        self.yt_proxy = os.getenv("YT_PROXY") or None
 
     def validate(self):
         if not os.path.isabs(self.download_dir):

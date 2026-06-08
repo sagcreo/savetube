@@ -46,6 +46,8 @@ class Downloader:
         }
         if self.settings.cookies_file:
             opts["cookiefile"] = self.settings.cookies_file
+        if self.settings.yt_proxy:
+            opts["proxy"] = self.settings.yt_proxy
         return opts
 
     def fetch_metadata(self, url: str) -> VideoMetadata:
