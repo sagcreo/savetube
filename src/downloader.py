@@ -38,6 +38,7 @@ class Downloader:
             "extractor_args": {
                 "youtube": {
                     "player_client": ["web", "mweb", "android"],
+                    "fetch_pot": ["always"],
                 },
                 "youtubepot-bgutilhttp": {
                     "base_url": [self.settings.pot_provider_url],
