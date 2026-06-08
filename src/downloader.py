@@ -28,7 +28,7 @@ class Downloader:
         self.settings = settings
 
     def _base_opts(self) -> dict:
-        return {
+        opts = {
             "quiet": True,
             "no_warnings": True,
             "retries": 5,
@@ -41,6 +41,9 @@ class Downloader:
                 },
             },
         }
+        if self.settings.cookies_file:
+            opts["cookiefile"] = self.settings.cookies_file
+        return opts
 
     def fetch_metadata(self, url: str) -> VideoMetadata:
         opts = self._base_opts()

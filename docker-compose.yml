@@ -18,8 +18,10 @@ services:
       - stack.env
     environment:
       - POT_PROVIDER_URL=http://bgutil-provider:4416
+      - COOKIES_FILE=/app/cookies/youtube.txt
     volumes:
       - downloads:/tmp/downloads
+      - ./cookies:/app/cookies
     ports:
       - "7249:6060"
     restart: unless-stopped
