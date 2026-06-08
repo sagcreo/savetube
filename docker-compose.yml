@@ -31,5 +31,3 @@ volumes:
 
 networks:
   web:
-    external: true
-    name: portainer-caddy_web
